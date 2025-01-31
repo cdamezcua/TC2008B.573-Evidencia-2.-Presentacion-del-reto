@@ -544,7 +544,7 @@ def draw_roads():
                 p2_left = (x2 - ox, 0, z2 - oz)
                 p2_right = (x2 + ox, 0, z2 + oz)
 
-                gl.glColor3f(0.5, 0.5, 0.5)
+                gl.glColor3f(0.3, 0.3, 0.3)
                 gl.glBegin(gl.GL_QUADS)
                 gl.glVertex3f(*p1_left)
                 gl.glVertex3f(*p1_right)
@@ -553,60 +553,47 @@ def draw_roads():
                 gl.glEnd()
             else:
                 # interseccion -> línea punteada
-                gl.glColor3f(1, 0, 0)
-                gl.glLineStipple(1, 0xAAAA)
-                gl.glEnable(gl.GL_LINE_STIPPLE)
+                gl.glColor3f(1, 1, 1)
                 gl.glBegin(gl.GL_LINES)
                 gl.glVertex3f(x1, 1, z1)
                 gl.glVertex3f(x2, 1, z2)
                 gl.glEnd()
-                gl.glDisable(gl.GL_LINE_STIPPLE)
 
 
 def draw_areas():
-    # Pequeño ejemplo
-    gl.glColor3f(0.8, 0.8, 0.8)
-    gl.glBegin(gl.GL_QUADS)
-    gl.glVertex3f(X[2], 0, X[2])  # (-15, -15)
-    gl.glVertex3f(X[5], 0, X[2])  # ( 15, -15)
-    gl.glVertex3f(X[5], 0, X[5])  # ( 15,  15)
-    gl.glVertex3f(X[2], 0, X[5])  # (-15,  15)
-    gl.glEnd()
+    # Define quads using only two opposite points
+    quads_gray = [
+        ((X[2], -0.1, X[2]), (X[5], -0.1, X[5])),
+        ((-85, -0.1, -85), (X[2], -0.1, 85)),
+        ((-85, -0.1, X[5]), (X[2], -0.1, 85)),
+        ((X[5], -0.1, -85), (85, -0.1, X[2])),
+        ((X[5], -0.1, X[5]), (85, -0.1, 85)),
+    ]
 
-    # 2. Rectángulos verdes
-    gl.glColor3f(0.0, 1.0, 0.0)  # verde
+    quads_green = [
+        ((-75, 0, -75), (X[2] - 10, 0, X[2] - 10)),
+        ((-75, 0, X[5] + 10), (X[2] - 10, 0, 75)),
+        ((X[5] + 10, 0, -75), (75, 0, X[2] - 10)),
+        ((X[5] + 10, 0, X[5] + 10), (75, 0, 75)),
+    ]
 
-    # (a) de (-85, -85) a (-15, -15)
-    gl.glBegin(gl.GL_QUADS)
-    gl.glVertex3f(-85, 0, -85)
-    gl.glVertex3f(X[2], 0, -85)  # -15
-    gl.glVertex3f(X[2], 0, X[2])  # -15
-    gl.glVertex3f(-85, 0, X[2])
-    gl.glEnd()
+    def get_quad_points(p1, p2):
+        """Generate the four corners of a quad from two opposite corners."""
+        x1, y1, z1 = p1
+        x2, y2, z2 = p2
+        return [(x1, y1, z1), (x2, y1, z1), (x2, y1, z2), (x1, y1, z2)]
 
-    # (b) de (-85, 15) a (-15, 85)
-    gl.glBegin(gl.GL_QUADS)
-    gl.glVertex3f(-85, 0, X[5])  # 15
-    gl.glVertex3f(X[2], 0, X[5])  # -15, 15
-    gl.glVertex3f(X[2], 0, 85)
-    gl.glVertex3f(-85, 0, 85)
-    gl.glEnd()
+    def draw_quads(quads, color):
+        gl.glColor3f(*color)
+        for p1, p2 in quads:
+            quad = get_quad_points(p1, p2)
+            gl.glBegin(gl.GL_QUADS)
+            for v in quad:
+                gl.glVertex3f(*v)
+            gl.glEnd()
 
-    # (c) de (15, -85) a (85, -15)
-    gl.glBegin(gl.GL_QUADS)
-    gl.glVertex3f(X[5], 0, -85)  # 15
-    gl.glVertex3f(85, 0, -85)
-    gl.glVertex3f(85, 0, X[2])  # -15
-    gl.glVertex3f(X[5], 0, X[2])  # 15, -15
-    gl.glEnd()
-
-    # (d) de (15, 15) a (85, 85)
-    gl.glBegin(gl.GL_QUADS)
-    gl.glVertex3f(X[5], 0, X[5])  # 15, 15
-    gl.glVertex3f(85, 0, X[5])  # 85, 15
-    gl.glVertex3f(85, 0, 85)
-    gl.glVertex3f(X[5], 0, 85)
-    gl.glEnd()
+    draw_quads(quads_gray, (0.6, 0.6, 0.6))
+    draw_quads(quads_green, (0.2, 0.8, 0.2))
 
 
 def draw_crosswalk(p1, p2, width=10, num_stripes=8):
