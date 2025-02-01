@@ -559,6 +559,102 @@ def draw_roads():
                 gl.glVertex3f(x2, 1, z2)
                 gl.glEnd()
 
+# Posiciones de los árboles y edificios en las áreas verdes
+tree_positions = [
+    (-32, 0, -35),# Ejemplo de posición para un árbol
+    (-32, 0, -70),
+    (-32, 0, 35),   # Otra posición para un árbol
+    (-32, 0, 70),
+    (32, 0, -35),   # Otra posición para un árbol
+    (32, 0, -70),
+    (32, 0, 35),     # Otra posición para un árbol
+    (32, 0, 70)
+]
+
+building_positions = [
+    ((-45, 0, -52), -90),  # Rotar 90° para alinearlo con la calle
+    ((-45, 0, 52), -90),   # No rotar
+    ((45, 0, -52), 90),  # Rotar 90° para alinearlo con la calle
+    ((45, 0, 52), 90)    # No rotar
+]
+
+house_positions = [
+    ((-62, 0, -52),90),  # Ejemplo de posición para una casa
+    ((-62, 0, -30),90),
+    ((-62, 0, 52), 90),
+    ((-62, 0, 75), 90),
+    ((62, 0, -75), -90),
+    ((62, 0, -47), -90),
+    ((62, 0, 57),-90),
+    ((62, 0, 35),-90),
+]
+
+walls = [
+    ((-100, 0, -100), (100, 50, -100)),  # Muro trasero
+    ((-100, 0, 100), (100, 50, 100)),    # Muro frontal
+    ((-100, 0, -100), (-100, 50, 100)),  # Muro izquierdo
+    ((100, 0, -100), (100, 50, 100)),    # Muro derecho
+]
+
+
+def draw_tree(position):
+    x, y, z = position
+    gl.glPushMatrix()
+    gl.glTranslatef(x, y, z)
+    gl.glRotatef(-90, 1, 0, 0)
+    gl.glScalef(1, 1, 1)  # Ajusta la escala del árbol si es necesario
+    tree_model.render()
+    gl.glPopMatrix()
+
+def draw_building(position, rotation):
+    x, y, z = position
+    gl.glPushMatrix()
+    gl.glTranslatef(x, y, z)  # Mueve el edificio a su posición
+    gl.glRotatef(rotation, 0, 1, 0)  # Gira según el ángulo dado
+    gl.glRotatef(-90, 1, 0, 0)
+    gl.glScalef(1.1, 1.1, 1.1)  # Ajusta la escala del edificio
+    
+    # Activar textura
+    gl.glEnable(gl.GL_TEXTURE_2D)
+    gl.glBindTexture(gl.GL_TEXTURE_2D, building_texture)
+
+    # Renderizar edificio
+    building_model.render()
+
+    # Desactivar textura
+    gl.glDisable(gl.GL_TEXTURE_2D)
+
+    gl.glPopMatrix()
+
+def draw_walls():
+    gl.glEnable(gl.GL_TEXTURE_2D)  # Usa el prefijo gl.
+    gl.glBindTexture(gl.GL_TEXTURE_2D, wall_texture)
+
+    gl.glColor3f(1, 1, 1)  # Asegura que la textura no se vea afectada por el color
+
+    for p1, p2 in walls:
+        x1, y1, z1 = p1
+        x2, y2, z2 = p2
+
+        gl.glBegin(gl.GL_QUADS)
+        gl.glTexCoord2f(0, 0); gl.glVertex3f(x1, y1, z1)
+        gl.glTexCoord2f(1, 0); gl.glVertex3f(x2, y1, z2)
+        gl.glTexCoord2f(1, 1); gl.glVertex3f(x2, y2, z2)
+        gl.glTexCoord2f(0, 1); gl.glVertex3f(x1, y2, z1)
+        gl.glEnd()
+
+    gl.glDisable(gl.GL_TEXTURE_2D)  # Usa el prefijo gl.
+
+def draw_house(position, rotation):
+    x, y, z = position
+    gl.glPushMatrix()
+    gl.glTranslatef(x, y, z)
+    gl.glRotatef(rotation, 0, 1, 0)  # Ajusta la rotación si es necesario
+    gl.glRotatef(-90, 1, 0, 0)
+    gl.glScalef(12, 12, 12)  # Ajusta la escala de la casa si es necesario
+    house_model.render()
+    gl.glPopMatrix()
+
 
 def draw_areas():
     # Define quads using only two opposite points
@@ -576,7 +672,7 @@ def draw_areas():
         ((X[5] + 10, 0, -75), (75, 0, X[2] - 10)),
         ((X[5] + 10, 0, X[5] + 10), (75, 0, 75)),
     ]
-
+    
     def get_quad_points(p1, p2):
         """Generate the four corners of a quad from two opposite corners."""
         x1, y1, z1 = p1
@@ -652,6 +748,7 @@ def draw_crosswalk(p1, p2, width=10, num_stripes=8):
         gl.glEnd()
 
         traveled += stripe_len
+    
 
     gl.glDisable(gl.GL_BLEND)
 
@@ -711,7 +808,21 @@ def display():
     draw_axes()
     draw_lines()
     draw_roads()
+    draw_walls()
+    
+    # Dibujar árboles en las áreas verdes
+    for pos in tree_positions:
+        draw_tree(pos)
 
+    # Dibujar edificios en las áreas verdes
+    for pos, rot in building_positions:
+       draw_building(pos, rot)
+       
+    # Dibujar casas en las áreas verdes
+    for pos, rot in house_positions:
+        draw_house(pos, rot)
+
+    
     crosswalk_lines = [
         ((25, 0, -20), (25, 0, 20)),
         ((-25, 0, -20), (-25, 0, 20)),
@@ -758,8 +869,30 @@ def main():
 
     # Cargar modelo .obj (carro)
     global car_model
-    car_model = OBJ("Chevrolet_Camaro_SS_Low.obj", swapyz=True)  # Ajusta el nombre/ruta
+    car_model = OBJ("Assets/Chevrolet_Camaro_SS_Low.obj", swapyz=True)  # Ajusta el nombre/ruta
     car_model.generate()
+    
+    # Cargar modelo .obj (árbol)
+    global tree_model
+    tree_model = OBJ("Assets/CartoonTree.obj", swapyz=True)  # Ajusta el nombre/ruta
+    tree_model.generate()
+
+    # Cargar modelo .obj (edificio)
+    global building_model
+    building_model = OBJ("Assets/Rv_Building_3.obj", swapyz=True)  # Ajusta el nombre/ruta
+    building_model.generate()
+    
+    global building_texture
+    building_texture = OBJ.loadTexture("Assets/texture_build.jpg")  # Carga la textura de ladrillos
+
+    # Cargar modelo .obj (casa)
+    global house_model
+    house_model = OBJ("Assets/House/House.obj", swapyz=True)  # Ajusta el nombre/ruta
+    house_model.generate()
+    
+    global wall_texture
+    wall_texture = OBJ.loadTexture("Assets/background.jpg")  # Cargar la textura de la imagen
+
 
     global model
     model = TwoTypeStreetsModel({})

@@ -32,12 +32,19 @@ class OBJ:
             elif mtl is None:
                 raise ValueError("mtl file doesn't start with newmtl stmt")
             elif values[0] == 'map_Kd':
-                # load the texture referred to by this declaration
-                mtl[values[0]] = values[1]
-                imagefile = os.path.join(dirname, mtl['map_Kd'])
-                mtl['texture_Kd'] = cls.loadTexture(imagefile)
+                
+                if "Building" in filename:  # Detecta si el modelo es un edificio
+                    mtl[values[0]] = "Assets/texture_build.jpg"  # Aplica textura de ladrillos
+                else:
+                    mtl[values[0]] = values[1]  # Usa la textura original para otros modelos
+                
+                imagefile = os.path.join(dirname, mtl["map_Kd"])
+
+                if os.path.exists(imagefile):
+                    mtl["texture_Kd"] = cls.loadTexture(imagefile)
             else:
                 mtl[values[0]] = list(map(float, values[1:]))
+
         return contents
 
     def __init__(self, filename, swapyz=False):
