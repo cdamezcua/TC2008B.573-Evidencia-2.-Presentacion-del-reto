@@ -26,6 +26,12 @@ logging.info(
     "Iniciando simulación con dos tipos de calles (normal y luz) usando mensajes..."
 )
 
+# Variables de la cámara
+camera_angle = 0  
+camera_distance = 200  
+camera_height = 150  
+inside_plane = False  
+
 ###############################################################################
 #                          CONFIGURACIÓN DEL MODELO                           #
 ###############################################################################
@@ -466,6 +472,25 @@ class TwoTypeStreetsModel(ap.Model):
 ###############################################################################
 car_model = None  # Se cargará en main()
 
+def special_keys(key, x, y):
+    global camera_angle, camera_distance, camera_height, inside_plane
+    if key == glut.GLUT_KEY_LEFT:
+        camera_angle += 5
+    elif key == glut.GLUT_KEY_RIGHT:
+        camera_angle -= 5
+    elif key == glut.GLUT_KEY_UP:
+        if not inside_plane:
+            camera_distance = 5  
+            camera_height = 5  
+            inside_plane = True
+        else:
+            camera_distance = max(1, camera_distance - 5)  
+    elif key == glut.GLUT_KEY_DOWN:
+        if inside_plane:
+            camera_distance = min(50, camera_distance + 5)  
+        else:
+            camera_distance = min(300, camera_distance + 10)
+    glut.glutPostRedisplay()
 
 def draw_axes():
     gl.glBegin(gl.GL_LINES)
@@ -561,25 +586,25 @@ def draw_roads():
 
 # Posiciones de los árboles y edificios en las áreas verdes
 tree_positions = [
-    (-32, 0, -35),# Ejemplo de posición para un árbol
+    (-32, 0, -35),
     (-32, 0, -70),
-    (-32, 0, 35),   # Otra posición para un árbol
+    (-32, 0, 35),   
     (-32, 0, 70),
-    (32, 0, -35),   # Otra posición para un árbol
+    (32, 0, -35),   
     (32, 0, -70),
-    (32, 0, 35),     # Otra posición para un árbol
+    (32, 0, 35),     
     (32, 0, 70)
 ]
 
 building_positions = [
-    ((-45, 0, -52), -90),  # Rotar 90° para alinearlo con la calle
-    ((-45, 0, 52), -90),   # No rotar
-    ((45, 0, -52), 90),  # Rotar 90° para alinearlo con la calle
-    ((45, 0, 52), 90)    # No rotar
+    ((-45, 0, -52), -90), 
+    ((-45, 0, 52), -90),  
+    ((45, 0, -52), 90),  
+    ((45, 0, 52), 90)    
 ]
 
 house_positions = [
-    ((-62, 0, -52),90),  # Ejemplo de posición para una casa
+    ((-62, 0, -52),90),  
     ((-62, 0, -30),90),
     ((-62, 0, 52), 90),
     ((-62, 0, 75), 90),
@@ -602,17 +627,17 @@ def draw_tree(position):
     gl.glPushMatrix()
     gl.glTranslatef(x, y, z)
     gl.glRotatef(-90, 1, 0, 0)
-    gl.glScalef(1, 1, 1)  # Ajusta la escala del árbol si es necesario
+    gl.glScalef(1, 1, 1)  
     tree_model.render()
     gl.glPopMatrix()
 
 def draw_building(position, rotation):
     x, y, z = position
     gl.glPushMatrix()
-    gl.glTranslatef(x, y, z)  # Mueve el edificio a su posición
-    gl.glRotatef(rotation, 0, 1, 0)  # Gira según el ángulo dado
+    gl.glTranslatef(x, y, z) 
+    gl.glRotatef(rotation, 0, 1, 0)  
     gl.glRotatef(-90, 1, 0, 0)
-    gl.glScalef(1.1, 1.1, 1.1)  # Ajusta la escala del edificio
+    gl.glScalef(1.1, 1.1, 1.1)  
     
     # Activar textura
     gl.glEnable(gl.GL_TEXTURE_2D)
@@ -649,9 +674,9 @@ def draw_house(position, rotation):
     x, y, z = position
     gl.glPushMatrix()
     gl.glTranslatef(x, y, z)
-    gl.glRotatef(rotation, 0, 1, 0)  # Ajusta la rotación si es necesario
+    gl.glRotatef(rotation, 0, 1, 0)  
     gl.glRotatef(-90, 1, 0, 0)
-    gl.glScalef(12, 12, 12)  # Ajusta la escala de la casa si es necesario
+    gl.glScalef(12, 12, 12)  
     house_model.render()
     gl.glPopMatrix()
 
@@ -781,7 +806,7 @@ def draw_vehicle(vehicle):
     px, py, pz = vehicle.position
 
     gl.glPushMatrix()
-    gl.glTranslatef(px, py, pz)
+    gl.glTranslatef(px, py + 2.0, pz)
 
     # Si tu modelo OBJ está 'acostado', ajusta la rotación base
     gl.glRotatef(-90, 1, 0, 0)  # Ejemplo, si tu .obj apunta en eje +Z...
@@ -802,7 +827,16 @@ def display():
     gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
     gl.glMatrixMode(gl.GL_MODELVIEW)
     gl.glLoadIdentity()
-    glu.gluLookAt(0, 150, 150, 0, 0, 0, 0, 1, 0)
+    
+    # Configuración de la cámara
+    if inside_plane:
+        eye_x = camera_distance * math.sin(math.radians(camera_angle))
+        eye_z = camera_distance * math.cos(math.radians(camera_angle))
+        glu.gluLookAt(eye_x, camera_height, eye_z, 0, camera_height, 0, 0, 1, 0)
+    else:
+        eye_x = camera_distance * math.sin(math.radians(camera_angle))
+        eye_z = camera_distance * math.cos(math.radians(camera_angle))
+        glu.gluLookAt(eye_x, camera_height, eye_z, 0, 0, 0, 0, 1, 0)
 
     draw_areas()
     draw_axes()
@@ -865,33 +899,34 @@ def main():
     glu.gluPerspective(60, 800 / 600, 1, 1000)
 
     glut.glutDisplayFunc(display)
+    glut.glutSpecialFunc(special_keys)
     glut.glutTimerFunc(100, update, 0)
 
     # Cargar modelo .obj (carro)
     global car_model
-    car_model = OBJ("Assets/Chevrolet_Camaro_SS_Low.obj", swapyz=True)  # Ajusta el nombre/ruta
+    car_model = OBJ("Assets/Chevrolet_Camaro_SS_Low.obj", swapyz=True) 
     car_model.generate()
     
     # Cargar modelo .obj (árbol)
     global tree_model
-    tree_model = OBJ("Assets/CartoonTree.obj", swapyz=True)  # Ajusta el nombre/ruta
+    tree_model = OBJ("Assets/CartoonTree.obj", swapyz=True)  
     tree_model.generate()
 
     # Cargar modelo .obj (edificio)
     global building_model
-    building_model = OBJ("Assets/Rv_Building_3.obj", swapyz=True)  # Ajusta el nombre/ruta
+    building_model = OBJ("Assets/Rv_Building_3.obj", swapyz=True)  
     building_model.generate()
     
     global building_texture
-    building_texture = OBJ.loadTexture("Assets/texture_build.jpg")  # Carga la textura de ladrillos
+    building_texture = OBJ.loadTexture("Assets/texture_build.jpg")  
 
     # Cargar modelo .obj (casa)
     global house_model
-    house_model = OBJ("Assets/House/House.obj", swapyz=True)  # Ajusta el nombre/ruta
+    house_model = OBJ("Assets/House/House.obj", swapyz=True)  
     house_model.generate()
     
     global wall_texture
-    wall_texture = OBJ.loadTexture("Assets/background.jpg")  # Cargar la textura de la imagen
+    wall_texture = OBJ.loadTexture("Assets/background.jpg")  
 
 
     global model
